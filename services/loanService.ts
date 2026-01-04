@@ -24,10 +24,19 @@ interface MarketComparisonOutput {
     alternatives: string[];
 }
 
+interface Suggestion {
+    title: string;
+    description: string;
+    action_type: string;
+}
+
 interface DecisionSynthesisOutput {
     verdict: string;
     confidence: number;
     explanation: string;
+    score: number;
+    suggestions: Suggestion[];
+    financial_tips: string[];
 }
 
 import { CreditInsight } from "@/types";
@@ -58,7 +67,8 @@ export const calculateVerdict = async (
         interest_rate: loan.interestRate,
         tenure_months: loan.tenureMonths,
         lender_name: loan.lender || "Generic Lender",
-        purpose: loan.purpose
+        purpose: loan.purpose,
+        monthly_income: profile.monthlyIncome
     };
 
     const analyzerRes = await api.post<LoanAnalyzerOutput>("/agents/loan-analyzer", loanBody);
@@ -94,17 +104,20 @@ export const calculateVerdict = async (
     if (finalRes.verdict === "Safe") riskLevel = "SAFE";
     if (finalRes.verdict === "Dangerous") riskLevel = "DANGEROUS";
 
-    // Calculate a visual risk score (0-100)
-    let riskScore = 50;
-    if (riskLevel === 'SAFE') riskScore = 20;
-    if (riskLevel === 'DANGEROUS') riskScore = 85;
+    // Use Precise Score from Backend
+    // Backend 'score' is Stability/Safety (Higher is Better). 
+    // Frontend 'riskScore' usually implies Higher is Riskier (visual meter goes usually from Green to Red).
+    // Let's invert it: Risk Score = 100 - Safety Score.
+    const riskScore = 100 - finalRes.score;
 
     return {
         riskLevel,
         explanation: finalRes.explanation,
         confidenceScore: Math.round(finalRes.confidence * 100),
         riskFlags: [...financialRes.risk_flags, ...analyzerRes.hidden_traps],
-        riskScore: riskScore
+        riskScore: Math.max(0, Math.min(100, riskScore)),
+        suggestions: finalRes.suggestions,
+        financialTips: finalRes.financial_tips
     };
 };
 

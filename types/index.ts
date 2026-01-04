@@ -32,12 +32,20 @@ export interface CreditInsight {
 
 export type RiskLevel = 'SAFE' | 'RISKY' | 'DANGEROUS';
 
+export interface Suggestion {
+    title: string;
+    description: string;
+    action_type: string;
+}
+
 export interface FinalVerdict {
     riskLevel: RiskLevel;
     confidenceScore: number;
     explanation: string;
     riskFlags: string[];
     riskScore: number; // 0-100
+    suggestions?: Suggestion[];
+    financialTips?: string[];
 }
 
 export interface LenderComparison {
