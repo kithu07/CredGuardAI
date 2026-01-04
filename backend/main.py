@@ -3,7 +3,7 @@ from backend.models import (
     FinancialProfileInput, CreditScoreInput, LoanDetailsInput, LoanNecessityInput, DecisionSynthesisInput, FinancialMentorInput,
     FinancialProfileOutput, CreditScoreOutput, LoanNecessityOutput,
     LoanAnalyzerOutput, MarketComparisonOutput, DecisionSynthesisOutput,
-    FinancialMentorOutput
+    FinancialMentorOutput, FinancialMentorInput
 )
 from backend.agents.financial_profile import FinancialProfileAgent
 from backend.agents.credit_score import CreditScoreAgent
@@ -14,6 +14,16 @@ from backend.agents.decision_synthesis import DecisionSynthesisAgent
 from backend.agents.financial_mentor import FinancialMentorAgent
 
 app = FastAPI()
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize Agents
 financial_profile_agent = FinancialProfileAgent()
