@@ -12,9 +12,13 @@ export const FinalVerdictDashboard = () => {
     const { profile, loanRequest, verdict, setVerdict, resetApp, creditInsight } = useAppFlow();
     const [loading, setLoading] = useState(true);
 
+    const dataFetchedRef = React.useRef(false);
+
     useEffect(() => {
         const fetchVerdict = async () => {
+            if (dataFetchedRef.current) return; // Prevent double call
             if (!verdict) {
+                dataFetchedRef.current = true; // Mark as started
                 setLoading(true);
                 const res = await calculateVerdict(profile, loanRequest, creditInsight!);
                 setVerdict(res);
@@ -24,7 +28,7 @@ export const FinalVerdictDashboard = () => {
             }
         };
         fetchVerdict();
-    }, [profile, loanRequest, verdict, setVerdict]);
+    }, [profile, loanRequest, verdict, setVerdict, creditInsight]);
 
     if (loading || !verdict) {
         return (
@@ -35,7 +39,7 @@ export const FinalVerdictDashboard = () => {
         );
     }
 
-    const { riskLevel, explanation, confidenceScore, riskFlags, riskScore } = verdict;
+    const { riskLevel, explanation, confidenceScore, riskFlags, riskScore, suggestions, financialTips } = verdict;
 
     const colorMap = {
         SAFE: "text-emerald-700 bg-emerald-50 border-emerald-200",
@@ -142,26 +146,40 @@ export const FinalVerdictDashboard = () => {
                 </Card>
             </div>
 
-            {/* 3. Alternatives (Conditional) */}
-            {(riskLevel === 'RISKY' || riskLevel === 'DANGEROUS') && (
+            {/* 3. AI Suggestions (Smart Alternatives) */}
+            {suggestions && suggestions.length > 0 && (
                 <Card variant="highlight" className="p-8 border-l-4 border-l-blue-500">
-                    <h3 className="text-2xl font-bold text-slate-900 mb-4">💡 Smarter Alternatives</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-6">💡 Smart Alternatives</h3>
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                                <h4 className="font-bold text-blue-700">Reduce Loan Amount</h4>
-                                <p className="text-sm text-slate-600">Try borrowing ₹{(loanRequest.amount * 0.7).toLocaleString()} instead. This drops your EMI to a safe zone.</p>
-                            </div>
-                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                                <h4 className="font-bold text-purple-700">Wait & Save</h4>
-                                <p className="text-sm text-slate-600">Delay by 6 months. Save ₹5,000/mo creates a buffer.</p>
-                            </div>
+                            {suggestions.map((s, idx) => (
+                                <div key={idx} className="p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                    <h4 className="font-bold text-blue-700 mb-1">{s.title}</h4>
+                                    <p className="text-sm text-slate-600">{s.description}</p>
+                                </div>
+                            ))}
                         </div>
-                        <div className="bg-blue-50 p-6 rounded-xl">
-                            <p className="text-blue-900 italic font-medium">
-                                "Financial freedom is about patience. Avoiding this debt now could save you years of stress."
-                            </p>
-                            <p className="text-right text-blue-600 text-sm mt-2">- Your Mentor</p>
+
+                        {/* Financial Literacy Tips / Mentor Note */}
+                        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h4 className="font-bold text-indigo-900 mb-3 flex items-center">
+                                    🎓 Financial Wisdom
+                                </h4>
+                                <ul className="space-y-3">
+                                    {financialTips?.map((tip, idx) => (
+                                        <li key={idx} className="text-sm text-indigo-800 flex items-start">
+                                            <span className="mr-2 text-indigo-500">•</span>
+                                            {tip}
+                                        </li>
+                                    )) || (
+                                            <li className="text-sm text-indigo-800">
+                                                "Financial freedom is about patience. Avoiding this debt now could save you years of stress."
+                                            </li>
+                                        )}
+                                </ul>
+                            </div>
+                            <p className="text-right text-indigo-400 text-xs mt-4 font-medium">- Your AI Financial Mentor</p>
                         </div>
                     </div>
                 </Card>
