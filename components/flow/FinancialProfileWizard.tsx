@@ -86,7 +86,7 @@ export const FinancialProfileWizard = () => {
                             label="Existing EMIs"
                             type="number"
                             placeholder="e.g. 5000"
-                            value={profile.existingEMIs || ''}
+                            value={profile.existingEMIs ?? ''}
                             onChange={(e) => updateProfile({ existingEMIs: Number(e.target.value) })}
                             helperText="Total of all current loan repayments."
                             icon={<span className="text-gray-500">₹</span>}

@@ -1,4 +1,12 @@
 from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+
+from pathlib import Path
+
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 from backend.models import (
     FinancialProfileInput, CreditScoreInput, LoanDetailsInput, LoanNecessityInput, DecisionSynthesisInput, FinancialMentorInput,
     FinancialProfileOutput, CreditScoreOutput, LoanNecessityOutput,

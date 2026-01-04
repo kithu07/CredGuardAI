@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+import google.genai as genai
 from typing import Dict, Any
 
 class LLMClient:
@@ -7,13 +7,13 @@ class LLMClient:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             print("Warning: GEMINI_API_KEY not found. LLM features will return mock data.")
-            self.model = None
         else:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.client = genai.Client(api_key=api_key)
+            self.model_name = 'gemini-2.5-flash'
+            print("Gemini API key kitti.")
 
     def generate_explanation(self, context_json: Dict[str, Any]) -> str:
-        if not self.model:
+        if not hasattr(self, 'client'):
             return "LLM Explanation unavailable (Missing API Key)."
 
         prompt = f"""
@@ -34,7 +34,10 @@ class LLMClient:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             return response.text
         except Exception as e:
             return f"Error generating explanation: {str(e)}"
