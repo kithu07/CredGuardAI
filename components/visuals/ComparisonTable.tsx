@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { useAppFlow } from '@/context/AppFlowContext';
 import { getLoanComparisons } from '@/services/loanService';
 import { LenderComparison } from '@/types';
 import { Check, X, Shield, Info } from 'lucide-react';
 
 export const ComparisonTable = () => {
+    const { loanRequest } = useAppFlow();
     const [lenders, setLenders] = useState<LenderComparison[]>([]);
 
     useEffect(() => {
-        getLoanComparisons().then(setLenders);
-    }, []);
+        getLoanComparisons(loanRequest).then(setLenders);
+    }, [loanRequest]);
 
     if (lenders.length === 0) return <div className="p-4 text-center text-slate-500">Loading market rates...</div>;
 
