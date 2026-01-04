@@ -9,14 +9,14 @@ import { Bar, Line } from 'react-chartjs-2';
 import '@/components/visuals/chartRegistry';
 
 export const FinalVerdictDashboard = () => {
-    const { profile, loanRequest, verdict, setVerdict, resetApp } = useAppFlow();
+    const { profile, loanRequest, verdict, setVerdict, resetApp, creditInsight } = useAppFlow();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchVerdict = async () => {
             if (!verdict) {
                 setLoading(true);
-                const res = await calculateVerdict(profile, loanRequest);
+                const res = await calculateVerdict(profile, loanRequest, creditInsight!);
                 setVerdict(res);
                 setLoading(false);
             } else {

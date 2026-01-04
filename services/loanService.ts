@@ -30,96 +30,82 @@ interface DecisionSynthesisOutput {
     explanation: string;
 }
 
+import { CreditInsight } from "@/types";
+
 export const calculateVerdict = async (
     profile: FinancialProfile,
-    loan: LoanRequest
+    loan: LoanRequest,
+    creditInsight: CreditInsight
 ): Promise<FinalVerdict> => {
 
-    try {
-        // 1. Get Financial Stability Score
-        const profileBody = {
-            income: profile.monthlyIncome,
-            expenses: profile.monthlyExpenses,
-            savings: profile.savings,
-            emergency_fund: profile.savings, // Assuming savings includes emergency fund
-            assets: profile.assets.reduce((sum, a) => sum + a.value, 0),
-            existing_emis: profile.existingEMIs,
-            dependents: profile.dependents
-        };
+    // 1. Get Financial Stability Score
+    const profileBody = {
+        income: profile.monthlyIncome,
+        expenses: profile.monthlyExpenses,
+        savings: profile.savings,
+        emergency_fund: profile.savings, // Assuming savings includes emergency fund
+        assets: profile.assets.reduce((sum, a) => sum + a.value, 0),
+        existing_emis: profile.existingEMIs,
+        dependents: profile.dependents
+    };
 
-        const financialRes = await api.post<FinancialProfileOutput>("/agents/financial-profile", profileBody);
+    // Allow error to propagate if this fails - UI should handle loading/error state
+    const financialRes = await api.post<FinancialProfileOutput>("/agents/financial-profile", profileBody);
 
-        // 2. Analyze Loan Burden
-        const loanBody = {
-            amount: loan.amount,
-            interest_rate: loan.interestRate,
-            tenure_months: loan.tenureMonths,
-            lender_name: loan.lender || "Generic Lender",
-            purpose: loan.purpose
-        };
+    // 2. Analyze Loan Burden
+    const loanBody = {
+        amount: loan.amount,
+        interest_rate: loan.interestRate,
+        tenure_months: loan.tenureMonths,
+        lender_name: loan.lender || "Generic Lender",
+        purpose: loan.purpose
+    };
 
-        const analyzerRes = await api.post<LoanAnalyzerOutput>("/agents/loan-analyzer", loanBody);
+    const analyzerRes = await api.post<LoanAnalyzerOutput>("/agents/loan-analyzer", loanBody);
 
-        // 3. Check Necessity
-        const necessityBody = {
-            loan_purpose: loan.purpose,
-            loan_amount: loan.amount,
-            financial_stability_score: financialRes.stability_score,
-            savings: profile.savings,
-            emergency_fund: profile.savings
-        };
+    // 3. Check Necessity
+    const necessityBody = {
+        loan_purpose: loan.purpose,
+        loan_amount: loan.amount,
+        financial_stability_score: financialRes.stability_score,
+        savings: profile.savings,
+        emergency_fund: profile.savings
+    };
 
-        const necessityRes = await api.post<LoanNecessityOutput>("/agents/loan-necessity", necessityBody);
+    const necessityRes = await api.post<LoanNecessityOutput>("/agents/loan-necessity", necessityBody);
 
-        // 4. Check Market Fairness
-        const marketRes = await api.post<MarketComparisonOutput>("/agents/market-comparison", loanBody);
+    // 4. Check Market Fairness
+    const marketRes = await api.post<MarketComparisonOutput>("/agents/market-comparison", loanBody);
 
-        // 5. Final Decision Synthesis
-        // We need credit score band. In a real app we'd pass it in or fetch it. 
-        // We'll infer it or fetch it. To save time/calls, lets infer from stability for now 
-        // or duplicate the credit logic slightly.
-        // Let's assume "Good" to isolate the loan logic, or map stability score.
-        const inferredCreditBand = financialRes.stability_score > 70 ? "Good" : "Fair";
+    // 5. Final Decision Synthesis
+    // Use the actual credit band from the earlier step
+    const decisionBody = {
+        financial_stability_score: financialRes.stability_score,
+        credit_score_band: creditInsight.band,
+        loan_burden_score: analyzerRes.burden_score,
+        loan_necessity_level: necessityRes.necessity_level,
+        market_is_fair: marketRes.is_fair
+    };
 
-        const decisionBody = {
-            financial_stability_score: financialRes.stability_score,
-            credit_score_band: inferredCreditBand,
-            loan_burden_score: analyzerRes.burden_score,
-            loan_necessity_level: necessityRes.necessity_level,
-            market_is_fair: marketRes.is_fair
-        };
+    const finalRes = await api.post<DecisionSynthesisOutput>("/agents/decision-synthesis", decisionBody);
 
-        const finalRes = await api.post<DecisionSynthesisOutput>("/agents/decision-synthesis", decisionBody);
+    // Map to Frontend Verdict
+    let riskLevel: RiskLevel = "RISKY";
+    if (finalRes.verdict === "Safe") riskLevel = "SAFE";
+    if (finalRes.verdict === "Dangerous") riskLevel = "DANGEROUS";
 
-        // Map to Frontend Verdict
-        let riskLevel: RiskLevel = "RISKY";
-        if (finalRes.verdict === "Safe") riskLevel = "SAFE";
-        if (finalRes.verdict === "Dangerous") riskLevel = "DANGEROUS";
+    // Calculate a visual risk score (0-100)
+    let riskScore = 50;
+    if (riskLevel === 'SAFE') riskScore = 20;
+    if (riskLevel === 'DANGEROUS') riskScore = 85;
 
-        // Calculate a visual risk score (0-100) inverse of stability/safety
-        // Or just map confidence. Let's normalize it.
-        let riskScore = 50;
-        if (riskLevel === 'SAFE') riskScore = 20;
-        if (riskLevel === 'DANGEROUS') riskScore = 85;
-
-        return {
-            riskLevel,
-            explanation: finalRes.explanation,
-            confidenceScore: Math.round(finalRes.confidence * 100),
-            riskFlags: [...financialRes.risk_flags, ...analyzerRes.hidden_traps],
-            riskScore: riskScore // Could be dynamic
-        };
-
-    } catch (error) {
-        console.error("Verdict Agent Error", error);
-        return {
-            riskLevel: "RISKY",
-            explanation: "AI Agent unavailable. Proceed with caution.",
-            confidenceScore: 0,
-            riskFlags: ["Service Unavailable"],
-            riskScore: 50
-        };
-    }
+    return {
+        riskLevel,
+        explanation: finalRes.explanation,
+        confidenceScore: Math.round(finalRes.confidence * 100),
+        riskFlags: [...financialRes.risk_flags, ...analyzerRes.hidden_traps],
+        riskScore: riskScore
+    };
 };
 
 
