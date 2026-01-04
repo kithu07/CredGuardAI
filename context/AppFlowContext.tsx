@@ -32,6 +32,8 @@ const defaultLoanResult: LoanRequest = {
     interestRate: 10,
     tenureMonths: 12,
     lender: '',
+    purpose: '',
+    customPurpose: '',
 };
 
 const AppFlowContext = createContext<AppFlowState | undefined>(undefined);

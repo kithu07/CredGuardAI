@@ -3,7 +3,7 @@ import { useAppFlow } from '@/context/AppFlowContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { LENDERS } from '@/constants';
+import { LENDERS, LOAN_PURPOSES } from '@/constants';
 import { ArrowLeft, Calculator, AlertTriangle } from 'lucide-react';
 
 export const LoanDetailsScreen = () => {
@@ -67,6 +67,39 @@ export const LoanDetailsScreen = () => {
                             {LENDERS.map(l => <option key={l} value={l}>{l}</option>)}
                         </select>
                     </div>
+
+                    <div className="w-full pt-4 border-t border-slate-100">
+                        <label className="block text-sm font-semibold text-gray-700 mb-3 ml-1">
+                            Why are you planning to take this loan? <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="space-y-3">
+                            {LOAN_PURPOSES.map((p) => (
+                                <label key={p} className={`flex items-start space-x-3 p-3 border rounded-xl cursor-pointer transition-all ${loanRequest.purpose === p ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-slate-50'}`}>
+                                    <input
+                                        type="radio"
+                                        name="loanPurpose"
+                                        value={p}
+                                        checked={loanRequest.purpose === p}
+                                        onChange={(e) => updateLoanRequest({ purpose: e.target.value, customPurpose: e.target.value !== 'Other' ? '' : loanRequest.customPurpose })}
+                                        className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm font-medium text-slate-700 leading-snug">{p}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        {loanRequest.purpose === 'Other' && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+                                <Input
+                                    label="Please specify details"
+                                    type="text"
+                                    placeholder="e.g. debt consolidation..."
+                                    value={loanRequest.customPurpose || ''}
+                                    onChange={(e) => updateLoanRequest({ customPurpose: e.target.value })}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </Card>
 
                 <div className="space-y-6">
@@ -94,7 +127,7 @@ export const LoanDetailsScreen = () => {
                     <Button
                         className="w-full py-4 text-lg"
                         onClick={() => setStep(4)}
-                        disabled={loanRequest.amount <= 0}
+                        disabled={loanRequest.amount <= 0 || !loanRequest.purpose || (loanRequest.purpose === 'Other' && !loanRequest.customPurpose)}
                     >
                         Check My Eligibility
                     </Button>

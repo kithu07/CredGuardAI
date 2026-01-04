@@ -23,3 +23,13 @@ export const ASSET_TYPES = [
     "Fixed Deposits",
     "Vehicle",
 ];
+
+export const LOAN_PURPOSES = [
+    "Education",
+    "Medical emergency",
+    "Business / income generation",
+    "House / asset purchase",
+    "Personal upgrade (phone, gadgets, travel)",
+    "Social obligation (wedding, family pressure)",
+    "Other"
+];
