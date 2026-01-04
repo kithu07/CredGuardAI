@@ -1,5 +1,5 @@
 from .base_agent import BaseAgent
-from ..models import DecisionSynthesisOutput, FinancialMentorOutput
+from ..models import DecisionSynthesisOutput, FinancialMentorOutput, FinancialMentorInput
 from typing import Dict, Any
 
 class FinancialMentorAgent(BaseAgent):
