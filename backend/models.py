@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class FinancialProfileInput(BaseModel):
     income: float
@@ -70,7 +70,7 @@ class DecisionSynthesisOutput(BaseModel):
 
 class FinancialMentorInput(BaseModel):
     financial_profile: Dict[str, Any]
-    decision_synthesis: DecisionSynthesisOutput
+    decision_synthesis: DecisionSynthesisOutput 
 
 class FinancialMentorOutput(BaseModel):
     advice: List[str]

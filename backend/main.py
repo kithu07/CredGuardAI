@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from backend.models import (
-    FinancialProfileInput, CreditScoreInput, LoanDetailsInput, LoanNecessityInput, DecisionSynthesisInput,
+    FinancialProfileInput, CreditScoreInput, LoanDetailsInput, LoanNecessityInput, DecisionSynthesisInput, FinancialMentorInput,
     FinancialProfileOutput, CreditScoreOutput, LoanNecessityOutput,
     LoanAnalyzerOutput, MarketComparisonOutput, DecisionSynthesisOutput,
     FinancialMentorOutput
