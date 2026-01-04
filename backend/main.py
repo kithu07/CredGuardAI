@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from backend.models import (
-    FinancialProfileInput, CreditScoreInput, LoanDetailsInput,
+    FinancialProfileInput, CreditScoreInput, LoanDetailsInput, LoanNecessityInput, DecisionSynthesisInput,
     FinancialProfileOutput, CreditScoreOutput, LoanNecessityOutput,
     LoanAnalyzerOutput, MarketComparisonOutput, DecisionSynthesisOutput,
     FinancialMentorOutput
@@ -33,7 +33,7 @@ def run_credit_score(data: CreditScoreInput):
     return credit_score_agent.run(data)
 
 @app.post("/agents/loan-necessity", response_model=LoanNecessityOutput)
-def run_loan_necessity(data: LoanDetailsInput):
+def run_loan_necessity(data: LoanNecessityInput):
     return loan_necessity_agent.run(data)
 
 @app.post("/agents/loan-analyzer", response_model=LoanAnalyzerOutput)
@@ -45,11 +45,11 @@ def run_market_comparison(data: LoanDetailsInput):
     return market_comparison_agent.run(data)
 
 @app.post("/agents/decision-synthesis", response_model=DecisionSynthesisOutput)
-def run_decision_synthesis(data: dict):
+def run_decision_synthesis(data: DecisionSynthesisInput):
     return decision_synthesis_agent.run(data)
 
 @app.post("/agents/financial-mentor", response_model=FinancialMentorOutput)
-def run_financial_mentor(data: dict):
+def run_financial_mentor(data: FinancialMentorInput):
     return financial_mentor_agent.run(data)
 
 @app.get("/")
