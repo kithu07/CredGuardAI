@@ -5,6 +5,7 @@ class FinancialProfileInput(BaseModel):
     income: float
     expenses: float
     savings: float
+    emergency_fund: float = 0.0
     assets: float
     existing_emis: float
     dependents: int
@@ -22,6 +23,13 @@ class LoanDetailsInput(BaseModel):
     lender_name: str
     purpose: str
 
+class LoanNecessityInput(BaseModel):
+    loan_purpose: str
+    loan_amount: float
+    financial_stability_score: float
+    savings: float
+    emergency_fund: float
+
 class FinancialProfileOutput(BaseModel):
     stability_score: float # 0-100
     risk_flags: List[str]
@@ -32,9 +40,11 @@ class CreditScoreOutput(BaseModel):
     predicted_impact: str
 
 class LoanNecessityOutput(BaseModel):
+    necessity_level: str # High, Medium, Low
     is_necessary: bool
     confidence: float
     reasoning: str
+    risk_flags: List[str]
 
 class LoanAnalyzerOutput(BaseModel):
     burden_score: float # 0-100 (Higher is worse)
@@ -46,10 +56,21 @@ class MarketComparisonOutput(BaseModel):
     market_average_rate: float
     alternatives: List[str]
 
+class DecisionSynthesisInput(BaseModel):
+    financial_stability_score: float # 0-100
+    credit_score_band: str # Poor, Fair, Good, Excellent
+    loan_burden_score: float # 0-100 (Higher is worse)
+    loan_necessity_level: str # High, Medium, Low
+    market_is_fair: bool 
+
 class DecisionSynthesisOutput(BaseModel):
     verdict: str # Safe, Risky, Dangerous
     confidence: float
     explanation: str
+
+class FinancialMentorInput(BaseModel):
+    financial_profile: Dict[str, Any]
+    decision_synthesis: DecisionSynthesisOutput
 
 class FinancialMentorOutput(BaseModel):
     advice: List[str]
