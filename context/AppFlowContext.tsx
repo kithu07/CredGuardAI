@@ -39,7 +39,7 @@ const defaultLoanResult: LoanRequest = {
 const AppFlowContext = createContext<AppFlowState | undefined>(undefined);
 
 export const AppFlowProvider = ({ children }: { children: ReactNode }) => {
-    const [currentStep, setStep] = useState(1);
+    const [currentStep, setStep] = useState(0);
     const [profile, setProfile] = useState<FinancialProfile>(defaultProfile);
     const [loanRequest, setLoanRequest] = useState<LoanRequest>(defaultLoanResult);
     const [verdict, setVerdictState] = useState<FinalVerdict | null>(null);
@@ -57,7 +57,7 @@ export const AppFlowProvider = ({ children }: { children: ReactNode }) => {
     const setCreditInsight = (c: CreditInsight) => setCreditInsightState(c);
 
     const resetApp = () => {
-        setStep(1);
+        setStep(0); // Reset to Language Selection
         setProfile(defaultProfile);
         setLoanRequest(defaultLoanResult);
         setVerdictState(null);

@@ -4,9 +4,10 @@ interface CardProps {
     children: React.ReactNode;
     className?: string;
     variant?: 'white' | 'glass' | 'highlight';
+    onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className = '', variant = 'white' }) => {
+export const Card: React.FC<CardProps> = ({ children, className = '', variant = 'white', onClick }) => {
     const variants = {
         white: "bg-white border text-card-foreground shadow-sm",
         glass: "bg-white/80 backdrop-blur-md border border-white/20 shadow-xl", // Glassmorphism needs a background usually
@@ -17,7 +18,10 @@ export const Card: React.FC<CardProps> = ({ children, className = '', variant = 
     // We'll trust the layout provides the background.
 
     return (
-        <div className={`rounded-2xl p-6 ${variants[variant]} ${className}`}>
+        <div
+            className={`rounded-2xl p-6 ${variants[variant]} ${className}`}
+            onClick={onClick}
+        >
             {children}
         </div>
     );

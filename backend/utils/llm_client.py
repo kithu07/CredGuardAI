@@ -62,6 +62,11 @@ class LLMClient:
         Act as an expert Credit Risk Analyst and Financial Mentor.
         Analyze the following user financial data and loan request to provide a final verdict.
         
+        LANGUAGE INSTRUCTION: 
+        Respond in the language specified in the input ('language' key). 
+        If 'language' is 'ml', provide the 'explanation', 'suggestions.title', 'suggestions.description', and 'financial_tips' in Malayalam (Manglish script allowed if highly technical, but script preferred).
+        If 'language' is 'en' or missing, use English.
+        
         INPUT DATA:
         {context_json}
         

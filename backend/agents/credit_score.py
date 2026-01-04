@@ -3,6 +3,18 @@ from ..models import CreditScoreInput, CreditScoreOutput
 
 class CreditScoreAgent(BaseAgent):
     def run(self, input_data: CreditScoreInput) -> CreditScoreOutput:
+        # 0. Override if CIBIL provided
+        if input_data.cibil_score and input_data.cibil_score > 300:
+            cibil = input_data.cibil_score
+            if cibil >= 750:
+                 return CreditScoreOutput(score_band="Excellent", approval_probability=0.95, predicted_impact="None")
+            elif cibil >= 700:
+                 return CreditScoreOutput(score_band="Good", approval_probability=0.85, predicted_impact="Low Impact")
+            elif cibil >= 650:
+                 return CreditScoreOutput(score_band="Fair", approval_probability=0.60, predicted_impact="Moderate Impact")
+            else:
+                 return CreditScoreOutput(score_band="Poor", approval_probability=0.20, predicted_impact="Severe Impact")
+
         # Base Probability starts high, penalized by bad behavior
         prob = 0.95
         

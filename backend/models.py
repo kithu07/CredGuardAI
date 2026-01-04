@@ -15,6 +15,8 @@ class CreditScoreInput(BaseModel):
     credit_utilization_ratio: float
     credit_age_years: float
     active_loans: int
+    cibil_score: Optional[int] = None # Added for precise tracking
+
 
 class LoanDetailsInput(BaseModel):
     amount: float
@@ -63,6 +65,7 @@ class DecisionSynthesisInput(BaseModel):
     loan_burden_score: float # 0-100 (Higher is worse)
     loan_necessity_level: str # High, Medium, Low
     market_is_fair: bool 
+    language: str = "en" # 'en' or 'ml' 
 
 class Suggestion(BaseModel):
     title: str
@@ -80,7 +83,38 @@ class DecisionSynthesisOutput(BaseModel):
 class FinancialMentorInput(BaseModel):
     financial_profile: Dict[str, Any]
     decision_synthesis: DecisionSynthesisOutput 
+    language: str = "en" 
 
 class FinancialMentorOutput(BaseModel):
     advice: List[str]
     recovery_plan: str
+    negotiation_script: str = "" # Script to read to the bank
+
+class DebtItem(BaseModel):
+    name: str # e.g. "Credit Card"
+    amount: float
+    interest_rate: float
+    monthly_payment: float
+
+class DebtConsolidationInput(BaseModel):
+    existing_debts: List[DebtItem]
+    new_loan_amount: float
+    new_loan_interest_rate: float
+    new_loan_tenure_months: int
+
+class DebtConsolidationOutput(BaseModel):
+    should_consolidate: bool
+    monthly_savings: float
+    total_savings: float
+    recommendation: str
+
+class RiskClause(BaseModel):
+    clause_text: str
+    risk_level: str # 'High', 'Medium', 'Low'
+    explanation: str
+    recommendation: str
+
+class LegalReviewOutput(BaseModel):
+    risk_clauses: List[RiskClause]
+    overall_risk: str # 'Safe', 'Caution', 'Danger'
+    summary: str

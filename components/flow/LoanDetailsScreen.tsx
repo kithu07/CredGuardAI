@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LENDERS, LOAN_PURPOSES } from '@/constants';
 import { ArrowLeft, Calculator, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export const LoanDetailsScreen = () => {
     const { loanRequest, updateLoanRequest, setStep, profile } = useAppFlow();
+    const { t } = useLanguage();
     const [emiPreview, setEmiPreview] = useState(0);
 
     useEffect(() => {
@@ -28,27 +30,27 @@ export const LoanDetailsScreen = () => {
     return (
         <div className="w-full max-w-2xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500">
             <div className="mb-8 text-center">
-                <h2 className="text-3xl font-bold text-slate-900">Loan Details</h2>
-                <p className="text-slate-600 mt-2">Structure your desired loan.</p>
+                <h2 className="text-3xl font-bold text-slate-900">{t('loan_title')}</h2>
+                <p className="text-slate-600 mt-2">{t('loan_subtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
                 <Card className="p-6 space-y-5 h-fit">
                     <Input
-                        label="Loan Amount Needed"
+                        label={t('amount_label')}
                         type="number"
                         value={loanRequest.amount || ''}
                         onChange={(e) => updateLoanRequest({ amount: Number(e.target.value) })}
                         icon={<span className="text-gray-500">₹</span>}
                     />
                     <Input
-                        label="Interest Rate (% p.a.)"
+                        label={t('interest_label')}
                         type="number"
                         value={loanRequest.interestRate}
                         onChange={(e) => updateLoanRequest({ interestRate: Number(e.target.value) })}
                     />
                     <Input
-                        label="Tenure (Months)"
+                        label={t('tenure_label')}
                         type="number"
                         value={loanRequest.tenureMonths}
                         onChange={(e) => updateLoanRequest({ tenureMonths: Number(e.target.value) })}
@@ -56,21 +58,21 @@ export const LoanDetailsScreen = () => {
 
                     <div className="w-full">
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">
-                            Preferred Lender (Optional)
+                            {t('lender_label')}
                         </label>
                         <select
                             className="block w-full px-4 py-3 text-gray-900 bg-white border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
                             value={loanRequest.lender}
                             onChange={(e) => updateLoanRequest({ lender: e.target.value })}
                         >
-                            <option value="">Select a lender...</option>
+                            <option value="">{t('lender_placeholder')}</option>
                             {LENDERS.map(l => <option key={l} value={l}>{l}</option>)}
                         </select>
                     </div>
 
                     <div className="w-full pt-4 border-t border-slate-100">
                         <label className="block text-sm font-semibold text-gray-700 mb-3 ml-1">
-                            Why are you planning to take this loan? <span className="text-rose-500">*</span>
+                            {t('purpose_label')} <span className="text-rose-500">*</span>
                         </label>
                         <div className="space-y-3">
                             {LOAN_PURPOSES.map((p) => (
@@ -91,7 +93,7 @@ export const LoanDetailsScreen = () => {
                         {loanRequest.purpose === 'Other' && (
                             <div className="mt-3 animate-in fade-in slide-in-from-top-2">
                                 <Input
-                                    label="Please specify details"
+                                    label={t('purpose_other_label')}
                                     type="text"
                                     placeholder="e.g. debt consolidation..."
                                     value={loanRequest.customPurpose || ''}
@@ -118,7 +120,7 @@ export const LoanDetailsScreen = () => {
                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-left flex items-start space-x-3">
                                 <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                                 <p className="text-xs text-amber-800 leading-relaxed">
-                                    <span className="font-bold">Heads up:</span> This EMI is more than 40% of your current income. This might be tight.
+                                    {t('high_emi_warning')}
                                 </p>
                             </div>
                         )}
@@ -129,12 +131,12 @@ export const LoanDetailsScreen = () => {
                         onClick={() => setStep(4)}
                         disabled={loanRequest.amount <= 0 || !loanRequest.purpose || (loanRequest.purpose === 'Other' && !loanRequest.customPurpose)}
                     >
-                        Check My Eligibility
+                        {t('check_eligibility')}
                     </Button>
 
                     <Button variant="ghost" onClick={() => setStep(2)} className="w-full">
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Profile
+                        {t('back_profile')}
                     </Button>
                 </div>
             </div>

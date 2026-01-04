@@ -44,8 +44,9 @@ export interface FinalVerdict {
     explanation: string;
     riskFlags: string[];
     riskScore: number; // 0-100
-    suggestions?: Suggestion[];
-    financialTips?: string[];
+    suggestions: Suggestion[];
+    financialTips: string[];
+    negotiationScript?: string; // New field for Loan Negotiator
 }
 
 export interface LenderComparison {

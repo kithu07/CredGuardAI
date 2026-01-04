@@ -6,12 +6,14 @@ import { FinancialProfileWizard } from "@/components/flow/FinancialProfileWizard
 import { LoanDetailsScreen } from "@/components/flow/LoanDetailsScreen";
 import { CreditScoreInsightScreen } from "@/components/flow/CreditScoreInsightScreen";
 import { FinalVerdictDashboard } from "@/components/flow/FinalVerdictDashboard";
+import { LanguageSelectionScreen } from "@/components/flow/LanguageSelectionScreen";
 
 export default function Home() {
   const { currentStep } = useAppFlow();
 
   return (
     <div className="w-full max-w-6xl mx-auto py-12">
+      {currentStep === 0 && <LanguageSelectionScreen />}
       {currentStep === 1 && <WelcomeScreen />}
       {currentStep === 2 && <FinancialProfileWizard />}
       {currentStep === 3 && <LoanDetailsScreen />}
