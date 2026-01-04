@@ -22,6 +22,7 @@ class LoanDetailsInput(BaseModel):
     tenure_months: int
     lender_name: str
     purpose: str
+    monthly_income: float = 0.0 # Added for Affordability/DTI calculation
 
 class LoanNecessityInput(BaseModel):
     loan_purpose: str
@@ -63,10 +64,18 @@ class DecisionSynthesisInput(BaseModel):
     loan_necessity_level: str # High, Medium, Low
     market_is_fair: bool 
 
+class Suggestion(BaseModel):
+    title: str
+    description: str
+    action_type: str # e.g., "lower_amount", "wait_save", "alternative"
+
 class DecisionSynthesisOutput(BaseModel):
     verdict: str # Safe, Risky, Dangerous
     confidence: float
     explanation: str
+    score: float # 0-100 (Higher is Safer)
+    suggestions: List[Suggestion] = []
+    financial_tips: List[str] = []
 
 class FinancialMentorInput(BaseModel):
     financial_profile: Dict[str, Any]
