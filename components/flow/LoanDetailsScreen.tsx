@@ -102,8 +102,8 @@ export const LoanDetailsScreen = () => {
                     </div>
                 </Card>
 
-                <div className="space-y-6">
-                    <Card variant="highlight" className="p-6 text-center space-y-4 h-fit sticky top-4">
+                <div className="space-y-6 sticky top-4 h-fit">
+                    <Card variant="highlight" className="p-6 text-center space-y-4">
                         <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto text-blue-600">
                             <Calculator className="w-6 h-6" />
                         </div>
