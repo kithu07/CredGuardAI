@@ -14,6 +14,23 @@ export const FinancialProfileWizard = () => {
     const { profile, updateProfile, setStep } = useAppFlow();
     const { t } = useLanguage();
     const [wizardStep, setWizardStep] = useState(1);
+    const [goldRate, setGoldRate] = useState<number>(0);
+
+    React.useEffect(() => {
+        const fetchGoldRate = async () => {
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://credguardai.onrender.com";
+                const res = await fetch(`${API_URL}/api/gold-rate`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setGoldRate(data.rate);
+                }
+            } catch (e) {
+                console.error("Failed to fetch gold rate", e);
+            }
+        };
+        fetchGoldRate();
+    }, []);
 
     const handleNext = () => {
         if (wizardStep < TOTAL_WIZARD_STEPS) {
@@ -115,18 +132,79 @@ export const FinancialProfileWizard = () => {
 
                         <div className="space-y-3">
                             <label className="block text-sm font-semibold text-gray-700">{t('assets_label')}</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {ASSET_TYPES.map((asset) => (
-                                    <label key={asset} className="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                                            // Mock implementation for assets array
-                                            onChange={() => { }}
-                                        />
-                                        <span className="text-sm font-medium text-slate-700">{asset}</span>
-                                    </label>
-                                ))}
+                            <div className="space-y-4">
+                                {ASSET_TYPES.map((asset) => {
+                                    const isSelected = profile.assets.some(a => a.name === asset);
+                                    const assetData = profile.assets.find(a => a.name === asset);
+
+                                    return (
+                                        <div key={asset} className={`p-4 border rounded-xl transition-all ${isSelected ? 'bg-blue-50 border-blue-200' : 'hover:bg-slate-50'}`}>
+                                            <label className="flex items-center space-x-3 cursor-pointer mb-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            // Add asset
+                                                            const newAsset = { id: Date.now().toString(), name: asset, value: 0 };
+                                                            updateProfile({ assets: [...profile.assets, newAsset] });
+                                                        } else {
+                                                            // Remove asset
+                                                            updateProfile({ assets: profile.assets.filter(a => a.name !== asset) });
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="font-medium text-slate-700">{asset}</span>
+                                            </label>
+
+                                            {isSelected && (
+                                                <div className="ml-8 animate-in slide-in-from-top-2">
+                                                    {asset === "Gold" ? (
+                                                        <div className="space-y-2">
+                                                            <div className="flex justify-between text-xs text-amber-600 font-semibold">
+                                                                <span>Live Gold Rate (Kerala):</span>
+                                                                <span>{goldRate > 0 ? `₹${goldRate.toLocaleString()}/g` : "Fetching..."}</span>
+                                                            </div>
+                                                            <Input
+                                                                label="Quantity (grams)"
+                                                                type="number"
+                                                                placeholder="e.g. 10"
+                                                                onChange={(e) => {
+                                                                    const qty = Number(e.target.value);
+                                                                    const val = qty * (goldRate || 7200);
+                                                                    // Update value in profile
+                                                                    const updatedAssets = profile.assets.map(a =>
+                                                                        a.name === "Gold" ? { ...a, value: val } : a
+                                                                    );
+                                                                    updateProfile({ assets: updatedAssets });
+                                                                }}
+                                                            />
+                                                            <p className="text-xs text-slate-500">
+                                                                Est. Value: ₹{assetData?.value.toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <Input
+                                                            label={`Estimated Value of ${asset}`}
+                                                            type="number"
+                                                            placeholder="e.g. 500000"
+                                                            value={assetData?.value || ''}
+                                                            onChange={(e) => {
+                                                                const val = Number(e.target.value);
+                                                                const updatedAssets = profile.assets.map(a =>
+                                                                    a.name === asset ? { ...a, value: val } : a
+                                                                );
+                                                                updateProfile({ assets: updatedAssets });
+                                                            }}
+                                                            icon={<span className="text-gray-500">₹</span>}
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
