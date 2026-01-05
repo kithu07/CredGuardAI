@@ -3,6 +3,7 @@ services:
   - type: web
     name: credguard-backend
     env: python
+    plan: free
     region: singapore # Optional: closer to India
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
@@ -14,6 +15,7 @@ services:
   - type: web
     name: credguard-frontend
     env: node
+    plan: free
     region: singapore
     buildCommand: npm install && npm run build
     startCommand: npm start
