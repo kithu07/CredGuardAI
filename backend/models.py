@@ -66,6 +66,12 @@ class DecisionSynthesisInput(BaseModel):
     loan_necessity_level: str # High, Medium, Low
     market_is_fair: bool 
     language: str = "en" # 'en' or 'ml' 
+    # Added for Personalized Suggestions
+    monthly_income: Optional[float] = 0.0
+    monthly_expenses: Optional[float] = 0.0
+    loan_amount: Optional[float] = 0.0
+    existing_emis: Optional[float] = 0.0
+    desired_emi: Optional[float] = 0.0 
 
 class Suggestion(BaseModel):
     title: str

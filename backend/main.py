@@ -136,8 +136,16 @@ async def run_tts(data: TTSInput):
     return StreamingResponse(stream, media_type="audio/mpeg")
 
 @app.get("/policies/{bank_code}")
-def get_policy(bank_code: str, lang: str = "en"):
+def get_policy(bank_code: str, lang: str = "en", name: str = "Valued Customer", loan_type: str = "Loan"):
     policy_data = POLICY_KNOWLEDGE_BASE.get(bank_code.upper(), POLICY_KNOWLEDGE_BASE["GENERIC"])
-    return {"text": policy_data.get(lang, policy_data["en"])}
+    raw_text = policy_data.get(lang, policy_data["en"])
+    
+    # Personalize text
+    # "hi [name] regarding your loan [loan type ] some of the crtical terms and conditions are[then say the conditions ]"
+    preamble = f"Hi {name}, regarding your {loan_type}, some of the critical terms and conditions are: "
+    if lang == "ml":
+        preamble = f"നമസ്കാരം {name}, നിങ്ങളുടെ {loan_type}-നെ സംബന്ധിച്ച ചില പ്രധാന വ്യവസ്ഥകൾ ഇവയാണ്: "
+    
+    return {"text": preamble + raw_text}
 def health_check():
     return {"status": "CredGuard AI Backend Running"}

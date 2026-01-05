@@ -33,22 +33,22 @@ export const ComparisonTable = () => {
                 </thead>
                 <tbody>
                     {lenders.map((lender) => (
-                        <tr key={lender.id} className="bg-white border-b hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-medium text-slate-900">{lender.name}</td>
+                        <tr key={lender.id} className="bg-white border-b hover:bg-slate-50/80 transition-all duration-200 group cursor-default">
+                            <td className="px-6 py-4 font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{lender.name}</td>
                             <td className="px-6 py-4 text-slate-500">{lender.type}</td>
-                            <td className="px-6 py-4 text-right font-bold text-slate-800">{lender.interestRate}%</td>
+                            <td className="px-6 py-4 text-right font-bold text-slate-800 tabular-nums">{lender.interestRate}%</td>
                             <td className="px-6 py-4 text-center">
-                                <div className="w-16 h-2 bg-slate-200 rounded-full inline-block overflow-hidden">
-                                    <div className="bg-emerald-500 h-full" style={{ width: `${lender.transparencyScore}%` }} />
+                                <div className="w-16 h-2 bg-slate-100 rounded-full inline-block overflow-hidden shadow-inner">
+                                    <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full" style={{ width: `${lender.transparencyScore}%` }} />
                                 </div>
                             </td>
                             <td className="px-6 py-4 text-center">
                                 {lender.hiddenChargesWarning ? (
-                                    <span className="inline-flex items-center px-2 py-1 bg-rose-50 text-rose-600 rounded-full text-xs font-medium">
+                                    <span className="inline-flex items-center px-2 py-1 bg-rose-50 text-rose-600 border border-rose-100 rounded-full text-xs font-medium">
                                         <Info className="w-3 h-3 mr-1" /> Potential
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-medium">
+                                    <span className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-xs font-medium">
                                         <Check className="w-3 h-3 mr-1" /> None
                                     </span>
                                 )}

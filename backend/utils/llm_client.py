@@ -90,12 +90,19 @@ class LLMClient:
         1. **High Burden**: If 'loan_burden_score' > 50, the verdict MUST be "Risky" or "Dangerous". Never "Safe".
         2. **Stability Check**: If 'financial_stability_score' < 50, the verdict cannot be "Safe".
         3. **Credit Drag**: If 'credit_score_band' is "Poor", the maximum 'score' is 45 (Dangerous).
-        4. **Income vs Loan**: If loan amount > 5x monthly income, treat as high risk.
+        4. **Income vs Loan**: If 'loan_amount' > 5x 'monthly_income', treat as high risk.
         5. **Verdict Definitions**:
             - "Safe": Stability > 70 AND Burden < 30 AND Credit != Poor.
             - "Dangerous": Burden > 70 OR Stability < 30 OR Credit == Poor.
             - "Risky": Anything in between.
         
+        SUGGESTION GUIDELINES (BE SPECIFIC):
+        1. Use the specific numbers provided in INPUT DATA (Income, Loan Amount, EMIs).
+        2. Instead of "Save more", say "Try to cut your monthly expenses by ₹[Specific Amount]".
+        3. Instead of "Borrow less", say "Consider reducing the loan amount to ₹[Lower Amount] to match your 40% EMI limit".
+        4. If 'existing_emis' is high, suggest consolidating specific debts.
+        5. Provide 2-3 highly actionable, concrete suggestions.
+
         Note: The user needs honest protection, not false hope. Be conservative.
         """
         
@@ -121,3 +128,38 @@ class LLMClient:
                 "suggestions": [],
                 "financial_tips": []
             }
+
+    def generate_negotiation_script(self, context_json: Dict[str, Any]) -> str:
+        """
+        Generates a highly personalized negotiation script.
+        """
+        if not hasattr(self, 'client'):
+            return "Negotiation script unavailable (Missing API Key)."
+
+        prompt = f"""
+        You are a tough but polite Loan Negotiation expert.
+        Write a SHORT, direct script (3-4 text lines max) that the user can read or email to their bank manager to get a better interest rate.
+        
+        INPUT DATA:
+        {context_json}
+        
+        STRATEGY RULES:
+        1. If Credit Score is "Good" or "Excellent": Leverage it heavily. Mention specific score if available.
+        2. If Credit Score is "Fair" or "Poor": Focus on "Loyalty" or "Stability" (Income) instead of score.
+        3. Mention the "Target Interest Rate" (e.g. 0.5% - 1% lower than offered).
+        4. Reference the specific "Lender Name" if provided.
+        5. Tone: Professional, confident, but not aggressive.
+        6. Language: Return ONLY the script text in quotes. No "Here is the script:".
+        
+        EXAMPLE OUPUT:
+        "Hello Manager, I've been a loyal customer for years. Given my credit score of 780, I noticed other banks offering 10.5%. Can you match that rate for me?"
+        """
+        
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            return response.text.replace('"', '').strip() # Clean quotes
+        except Exception as e:
+            return f"Error generating script: {str(e)}"

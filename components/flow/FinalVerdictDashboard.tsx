@@ -4,7 +4,7 @@ import { calculateVerdict, downloadReport } from '@/services/loanService';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ComparisonTable } from '@/components/visuals/ComparisonTable';
-import { AlertOctagon, CheckCircle, AlertTriangle, Download, ArrowRight, RefreshCw, Copy, FileText, ShieldAlert } from 'lucide-react';
+import { AlertOctagon, CheckCircle, AlertTriangle, Download, ArrowRight, RefreshCw, Copy, FileText, ShieldAlert, ArrowLeft } from 'lucide-react';
 import { Bar, Line } from 'react-chartjs-2';
 import '@/components/visuals/chartRegistry';
 
@@ -12,7 +12,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { API_BASE_URL } from '@/services/api';
 
 export const FinalVerdictDashboard = () => {
-    const { profile, loanRequest, verdict, setVerdict, resetApp, creditInsight } = useAppFlow();
+    const { profile, loanRequest, verdict, setVerdict, resetApp, creditInsight, setStep } = useAppFlow();
     const { t, language } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -22,13 +22,26 @@ export const FinalVerdictDashboard = () => {
 
     // Auto-Play Audio Effect
     const autoPlayPolicy = async () => {
-        if (!selectedBank) return;
+        // Dynamic Policy Key Mapping
+        let policyKey = "GENERIC";
+        const purpose = (loanRequest.purpose || "").toLowerCase();
+        const lender = (loanRequest.lender || "").toUpperCase();
+
+        if (lender.includes("HDFC")) policyKey = "HDFC_PERSONAL";
+        else if (lender.includes("BAJAJ")) policyKey = "BAJAJ_EMI";
+        else if (lender.includes("SBI")) policyKey = "SBI_HOME";
+        else if (purpose.includes("home") || purpose.includes("housing")) policyKey = "GENERIC_HOME";
+        else if (purpose.includes("personal") || purpose.includes("wedding") || purpose.includes("travel")) policyKey = "GENERIC_PERSONAL";
+
         // Clear previous audio
         setAudioUrl(null);
 
         try {
-            // 1. Fetch text
-            const policyRes = await fetch(`${API_BASE_URL}/policies/${selectedBank}?lang=${language}`);
+            const userName = profile.name || "User";
+            const loanType = loanRequest.purpose || "Loan";
+
+            // 1. Fetch text with Personalization
+            const policyRes = await fetch(`${API_BASE_URL}/policies/${policyKey}?lang=${language}&name=${userName}&loan_type=${loanType}`);
             if (!policyRes.ok) return;
             const policyJson = await policyRes.json();
 
@@ -84,15 +97,15 @@ export const FinalVerdictDashboard = () => {
     const { riskLevel, explanation, confidenceScore, riskFlags, riskScore, suggestions, financialTips } = verdict;
 
     const colorMap = {
-        SAFE: "text-emerald-700 bg-emerald-50 border-emerald-200",
-        RISKY: "text-amber-700 bg-amber-50 border-amber-200",
-        DANGEROUS: "text-rose-700 bg-rose-50 border-rose-200",
+        SAFE: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-200",
+        RISKY: "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-amber-200",
+        DANGEROUS: "bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-rose-200",
     };
 
     const iconMap = {
-        SAFE: <CheckCircle className="w-12 h-12 text-emerald-600" />,
-        RISKY: <AlertTriangle className="w-12 h-12 text-amber-600" />,
-        DANGEROUS: <AlertOctagon className="w-12 h-12 text-rose-600" />,
+        SAFE: <CheckCircle className="w-16 h-16 text-white/90 drop-shadow-md" />,
+        RISKY: <AlertTriangle className="w-16 h-16 text-white/90 drop-shadow-md" />,
+        DANGEROUS: <AlertOctagon className="w-16 h-16 text-white/90 drop-shadow-md" />,
     };
 
     // Dynamic Charts Data
@@ -137,128 +150,142 @@ export const FinalVerdictDashboard = () => {
     return (
         <div className="w-full max-w-5xl mx-auto space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-8 duration-500">
 
-            {/* 1. Main Verdict Card */}
-            <Card className={`p-8 border-2 ${colorMap[riskLevel]} shadow-lg relative overflow-hidden`} variant="white">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    {iconMap[riskLevel]}
-                </div>
-
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
-                    <div className="shrink-0">
+            {/* 1. Hero Verdict Card - Premium Gradient */}
+            <div className={`rounded-3xl shadow-2xl overflow-hidden ${colorMap[riskLevel]} transition-all duration-500 hover:scale-[1.01]`}>
+                <div className="p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl shadow-inner">
                         {iconMap[riskLevel]}
                     </div>
-                    <div className="flex-1 text-center md:text-left space-y-2">
-                        <h1 className="text-4xl font-extrabold tracking-tight">
-                            {riskLevel === 'SAFE' ? t('verdict_safe') : riskLevel === 'RISKY' ? t('verdict_risky') : t('verdict_dangerous')}
-                        </h1>
-                        <p className="text-lg font-medium opacity-90">{explanation}</p>
-
-                        <div className="flex items-center justify-center md:justify-start gap-4 mt-4 text-sm font-bold opacity-75">
-                            <span>Confidence: {confidenceScore}%</span>
-                            <span>•</span>
-                            <span>Risk Score: {riskScore}/100</span>
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+                                {verdict.riskLevel === 'SAFE' ? "Financially Sound" : verdict.riskLevel.replace('_', ' ')}
+                            </h2>
+                            <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider border border-white/10">
+                                {confidenceScore}% Confidence
+                            </span>
                         </div>
+                        <p className="text-lg text-blue-50/90 font-medium leading-relaxed max-w-3xl">
+                            {explanation}
+                        </p>
+                    </div>
+                    <div className="bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/10 min-w-[140px] text-center">
+                        <div className="text-xs font-medium text-blue-100 uppercase tracking-widest mb-1">Risk Score</div>
+                        <div className="text-3xl font-bold text-white">{riskScore}/100</div>
                     </div>
                 </div>
 
-                {/* Risk Meter */}
-                <div className="mt-8">
-                    <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 opacity-60">
-                        <span>{t('safe_label')}</span>
-                        <span>{t('critical_label')}</span>
-                    </div>
-                    <div className="w-full h-4 bg-black/10 rounded-full overflow-hidden">
-                        <div
-                            className={`h-full transition-all duration-1000 ease-out ${riskLevel === 'SAFE' ? 'bg-emerald-500' : riskLevel === 'RISKY' ? 'bg-amber-500' : 'bg-rose-500'
-                                }`}
-                            style={{ width: `${riskScore}%` }}
-                        />
-                    </div>
+                {/* Progress Bar Strip */}
+                <div className="h-2 bg-black/10 w-full relative">
+                    <div
+                        className="h-full bg-white/40 absolute top-0 left-0 transition-all duration-1000 ease-out"
+                        style={{ width: `${riskScore}%` }}
+                    />
                 </div>
-            </Card>
+            </div>
 
-            {/* 2. Visual Analysis */}
+            {/* 2. Visual Analysis (Charts) */}
             <div className="grid md:grid-cols-2 gap-8">
-                <Card className="p-6">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4">{t('budget_impact')}</h3>
+                <Card className="p-6 hover:shadow-xl transition-shadow duration-300 border-none bg-white/80 backdrop-blur-sm ring-1 ring-slate-200/60">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                        {t('budget_impact')}
+                    </h3>
                     <div className="h-64">
                         <Bar
                             data={emiIncomeData}
-                            options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { grid: { display: false } },
+                                    y: { grid: { color: '#f1f5f9' }, border: { display: false } }
+                                },
+                                elements: { bar: { borderRadius: 6 } }
+                            }}
                         />
                     </div>
                 </Card>
-                <Card className="p-6">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4">{t('savings_projection')}</h3>
+
+                <Card className="p-6 hover:shadow-xl transition-shadow duration-300 border-none bg-white/80 backdrop-blur-sm ring-1 ring-slate-200/60">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
+                        {t('savings_projection')}
+                    </h3>
                     <div className="h-64">
                         <Line
                             data={savingsProjectionData}
-                            options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: false } } }}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { grid: { display: false } },
+                                    y: { grid: { color: '#f1f5f9' }, border: { display: false } }
+                                },
+                                elements: { point: { radius: 3, hoverRadius: 6 }, line: { tension: 0.4 } }
+                            }}
                         />
                     </div>
                 </Card>
             </div>
 
-            {/* NEW: T&C Audio Player */}
+            {/* T&C Audio Player (Hidden / Background) 
+                User requested: "the uploaded screenshot shouldnt be physically visible to user .. instead whenever the user reached this page the speech should go like..."
+            */}
+            {/* 
             <Card className="p-6">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-900">{t('listen_tc')}</h3>
-                        <p className="text-slate-500 text-sm">{t('listen_tc_sub')}</p>
-                    </div>
+                 ... (Hidden UI) ...
+            </Card> 
+            */}
 
-                    <div className="flex gap-2 items-center">
-                        <select
-                            className="p-2 border rounded-md"
-                            value={selectedBank}
-                            onChange={(e) => setSelectedBank(e.target.value)}
-                        >
-                            <option value="HDFC_PERSONAL">HDFC Personal</option>
-                            <option value="BAJAJ_EMI">Bajaj EMI</option>
-                            <option value="SBI_HOME">SBI Home</option>
-                        </select>
-                        <Button onClick={() => autoPlayPolicy()}>
-                            {/* Keep manual play button just in case, but auto-play runs on change */}
-                            {t('play_audio')}
-                        </Button>
+            {/* Audio Element for Background Play */}
+            {audioUrl && (
+                <div className="fixed bottom-4 right-4 z-50 opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="bg-slate-900 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-3">
+                        <span className="text-xs font-semibold animate-pulse">
+                            🔴 Advisor Speaking...
+                        </span>
+                        <audio controls autoPlay src={audioUrl} className="h-8 w-32" />
+                        <button onClick={() => setAudioUrl(null)} className="text-xs hover:text-red-400">✖</button>
                     </div>
                 </div>
-
-                {audioUrl && (
-                    <div className="mt-6 bg-slate-50 p-4 rounded-lg flex justify-center">
-                        <audio controls autoPlay src={audioUrl} className="w-full max-w-md" />
-                    </div>
-                )}
-            </Card>
+            )}
 
             {/* 3. AI Suggestions (Smart Alternatives) */}
             {suggestions && suggestions.length > 0 && (
-                <Card variant="highlight" className="p-8 border-l-4 border-l-blue-500">
-                    <h3 className="text-2xl font-bold text-slate-900 mb-6">💡 {t('smart_alternatives')}</h3>
+                <Card variant="highlight" className="p-8 border-l-4 border-l-emerald-500 bg-white shadow-lg">
+                    <h3 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        💡 {t('smart_alternatives')}
+                    </h3>
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             {suggestions.map((s, idx) => (
-                                <div key={idx} className="p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                                    <h4 className="font-bold text-blue-700 mb-1">{s.title}</h4>
-                                    <p className="text-sm text-slate-600">{s.description}</p>
+                                <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-300 transition-colors">
+                                    <h4 className="font-bold text-emerald-800 mb-1 flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                        {s.title}
+                                    </h4>
+                                    <p className="text-sm text-slate-600 leading-relaxed">{s.description}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* Financial Literacy Tips / Mentor Note */}
-                        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl flex flex-col justify-between">
+                        <div className="bg-gradient-to-br from-slate-50 to-emerald-50 p-6 rounded-xl flex flex-col justify-between border border-emerald-100">
                             <div>
-                                <h4 className="font-bold text-indigo-900 mb-3 flex items-center">
+                                <h4 className="font-bold text-slate-800 mb-3 flex items-center border-b border-emerald-100 pb-2">
                                     🎓 {t('financial_wisdom')}
                                 </h4>
-                                <ul className="space-y-3">
+                                <ul className="space-y-4">
                                     {financialTips?.map((tip, idx) => (
-                                        <li key={idx} className="text-sm text-indigo-800 flex items-start">
-                                            <span className="mr-2 text-indigo-500">•</span>
+                                        <li key={idx} className="text-sm text-slate-700 flex items-start group">
+                                            <span className="mr-3 text-emerald-500 mt-1 transition-transform group-hover:scale-125">•</span>
                                             {tip}
                                         </li>
                                     )) || (
-                                            <li className="text-sm text-indigo-800">
+                                            <li className="text-sm text-slate-700">
                                                 "{t('financial_tip_fallback')}"
                                             </li>
                                         )}
@@ -274,29 +301,32 @@ export const FinalVerdictDashboard = () => {
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Negotiation Script */}
                 {verdict.negotiationScript && (
-                    <Card className="p-6 border-l-4 border-l-purple-500">
+                    <Card className="p-6 border-l-4 border-l-blue-600 bg-white hover:shadow-xl transition-all duration-300 group">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                    <FileText className="w-5 h-5 text-purple-600" />
+                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 group-hover:text-blue-700 transition-colors">
+                                    <FileText className="w-5 h-5 text-blue-600" />
                                     {t('negotiation_script') || "Negotiation Script"}
                                 </h3>
                                 <p className="text-sm text-slate-500">Read this to your bank manager.</p>
                             </div>
-                            <Button variant="ghost" onClick={() => navigator.clipboard.writeText(verdict.negotiationScript || "")} className="p-2 h-auto">
+                            <Button variant="ghost" onClick={() => navigator.clipboard.writeText(verdict.negotiationScript || "")} className="p-2 h-auto text-blue-600 hover:bg-blue-50">
                                 <Copy className="w-4 h-4" />
                             </Button>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-lg text-slate-700 italic border border-slate-200">
-                            "{verdict.negotiationScript}"
+                        <div className="bg-slate-50/50 p-4 rounded-xl text-slate-700 italic border border-blue-100/50 relative">
+                            <span className="absolute top-2 left-2 text-4xl text-blue-100 font-serif leading-none">"</span>
+                            <div className="relative z-10 pl-2">
+                                {verdict.negotiationScript}
+                            </div>
                         </div>
                     </Card>
                 )}
 
                 {/* Legal Guardian (Contract Scanner) */}
-                <Card className="p-6 border-l-4 border-l-red-500">
-                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-2">
-                        <ShieldAlert className="w-5 h-5 text-red-600" />
+                <Card className="p-6 border-l-4 border-l-rose-500 bg-white hover:shadow-xl transition-all duration-300 group">
+                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-2 group-hover:text-rose-700 transition-colors">
+                        <ShieldAlert className="w-5 h-5 text-rose-600" />
                         {t('legal_guardian') || "Legal Guardian"}
                     </h3>
                     <p className="text-sm text-slate-500 mb-4">Upload a Loan Agreement PDF to scan for predatory clauses.</p>
@@ -305,13 +335,13 @@ export const FinalVerdictDashboard = () => {
                 </Card>
 
                 {/* Debt Consolidation Calculator */}
-                <Card className="p-6 border-l-4 border-l-orange-500">
-                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-2">
-                        <RefreshCw className="w-5 h-5 text-orange-600" />
+                <Card className="p-6 border-l-4 border-l-amber-500 bg-white hover:shadow-xl transition-all duration-300 group">
+                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-2 group-hover:text-amber-700 transition-colors">
+                        <RefreshCw className="w-5 h-5 text-amber-600" />
                         Debt Switch Calculator
                     </h3>
                     <p className="text-sm text-slate-500 mb-4">Check if this new loan can save you money on old debts.</p>
-                    <DebtSwitchCalculator currentLoanRate={loanRequest.interestRate} />
+                    <DebtSwitchCalculator currentLoanRate={loanRequest.interestRate} loanAmount={loanRequest.amount} />
                 </Card>
             </div>
 
@@ -320,6 +350,9 @@ export const FinalVerdictDashboard = () => {
 
             {/* 7. Actions */}
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+                <Button variant="secondary" className="w-full sm:w-auto text-slate-600 border-slate-300 hover:bg-slate-50" onClick={() => setStep(3)}>
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Edit Inputs
+                </Button>
                 <Button variant="secondary" className="w-full sm:w-auto" onClick={() => resetApp()}>
                     <RefreshCw className="w-4 h-4 mr-2" /> {t('start_new')}
                 </Button>
@@ -420,8 +453,11 @@ const ContractScanner = () => {
     );
 };
 
-const DebtSwitchCalculator = ({ currentLoanRate }: { currentLoanRate: number }) => {
-    const [debtAmount, setDebtAmount] = useState<string>("");
+const DebtSwitchCalculator = ({ currentLoanRate, loanAmount }: { currentLoanRate: number, loanAmount: number }) => {
+    // Pre-fill if reasonable, or leave empty to encourage user input. 
+    // User said "Dynamic based on user data".
+    // If we assume the loan they are asking for is TO pay off debt, we can pre-fill.
+    const [debtAmount, setDebtAmount] = useState<string>(loanAmount.toString());
     const [oldRate, setOldRate] = useState<string>("");
     const [result, setResult] = useState<DebtConsolidationOutput | null>(null);
     const [loading, setLoading] = useState(false);
@@ -435,11 +471,11 @@ const DebtSwitchCalculator = ({ currentLoanRate }: { currentLoanRate: number }) 
                     name: "Existing Debt",
                     amount: parseFloat(debtAmount),
                     interest_rate: parseFloat(oldRate),
-                    monthly_payment: 0 // Not needed for MVP calc
+                    monthly_payment: 0
                 }],
-                new_loan_amount: parseFloat(debtAmount), // Assuming full refinance
+                new_loan_amount: parseFloat(debtAmount), // Compare apples to apples (refinancing this specific debt amount)
                 new_loan_interest_rate: currentLoanRate,
-                new_loan_tenure_months: 12 // Default 1 year for comparison
+                new_loan_tenure_months: 12
             });
             setResult(res);
         } catch (e) {

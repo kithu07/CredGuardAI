@@ -135,14 +135,26 @@ export const calculateVerdict = async (
         loan_burden_score: analyzerRes.burden_score,
         loan_necessity_level: necessityRes.necessity_level,
         market_is_fair: marketRes.is_fair,
-        language
+        language,
+        // Detailed Financial Context for Personalized Suggestions
+        monthly_income: profile.monthlyIncome,
+        monthly_expenses: profile.monthlyExpenses,
+        loan_amount: loan.amount,
+        existing_emis: profile.existingEMIs,
+        desired_emi: analyzerRes.total_payable / loan.tenureMonths // Approximation
     };
 
     const finalRes = await api.post<DecisionSynthesisOutput>("/agents/decision-synthesis", decisionBody);
 
     // 6. Get Negotiation Script (Financial Mentor)
     const mentorBody = {
-        financial_profile: profileBody,
+        financial_profile: {
+            ...profileBody,
+            // Inject Loan Details for Dynamic Negotiation Script
+            lender_name: loan.lender || "the Bank",
+            loan_amount: loan.amount,
+            interest_rate: loan.interestRate
+        },
         decision_synthesis: finalRes,
         language
     };

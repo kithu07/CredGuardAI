@@ -6,6 +6,7 @@ export interface FinancialProfile {
     assets: Asset[];
     dependents: number;
     spendingBehavior: number; // 0-100 slider
+    name?: string; // Added for Personalization
 }
 
 export interface Asset {

@@ -60,7 +60,14 @@ class PDFReport(FPDF):
     def chapter_body(self, text):
         self.set_font('Helvetica', '', 11)
         self.set_text_color(51, 65, 85)
-        self.multi_cell(0, 6, self.sanitize(text))
+        # Ensure we are at the start of the line or have space
+        if self.get_x() > 20: 
+            self.ln()
+        try:
+            self.multi_cell(0, 6, self.sanitize(text))
+        except Exception:
+            # Fallback for very long words or encoding issues
+            self.multi_cell(0, 6, self.sanitize(text[:100] + "... (truncated)"))
         self.ln()
 
     def generate(self):
@@ -104,6 +111,12 @@ class PDFReport(FPDF):
             self.set_font('Helvetica', 'B', 10)
             self.cell(60, 8, self.sanitize(key), border=1, fill=True)
             self.set_font('Helvetica', '', 10)
+            # Use multi_cell for value to prevent width overflow
+            # Save x, y to return for border drawing if needed, but simpler to just use cell with truncation or robust multi_cell logic
+            # Actually, standard cell clips text. Let's use multi_cell for safety or just clip.
+            # Error happened at 'render a single char', likely in a multi_cell.
+            # Table is using 'cell', which usually clips. 
+            # But let's check suggestions (tips).
             self.cell(0, 8, self.sanitize(str(value)), border=1, new_x="LMARGIN", new_y="NEXT")
             
         self.ln(10)
@@ -113,8 +126,17 @@ class PDFReport(FPDF):
         tips = self.verdict.get('financial_tips', [])
         for tip in tips:
             self.set_text_color(0, 0, 0)
-            # Combine bullet and text to avoid cell/multi_cell spacing issues
-            self.multi_cell(0, 6, f"- {self.sanitize(tip)}")
+            # Combine bullet and text
+            full_text = f"- {self.sanitize(tip)}"
+            # Safety check: if text is too long without spaces, force break? 
+            # Or just ensure we are at left margin.
+            if self.get_x() > 20:
+                self.ln()
+            
+            try:
+                self.multi_cell(0, 6, full_text)
+            except Exception:
+                 self.multi_cell(0, 6, full_text[:100] + "...")
         self.ln()
             
         # 5. Disclaimer

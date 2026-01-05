@@ -42,14 +42,27 @@ class DebtConsolidationAgent(BaseAgent):
         else:
             new_emi = P / n
 
-        monthly_savings = current_total_emi - new_emi
-        total_savings = monthly_savings * n # Roughly. Not accounting for tenure diffs of old loans exactly.
+        if current_total_emi == 0:
+            # Fallback: If user didn't provide current EMI, likely they just want rate comparison.
+            # Calculate theoretical savings based on Interest Rate difference only.
+            # Annual Interest Save = Principal * (RateDiff / 100)
+            if rate_diff > 0:
+                monthly_savings = (total_debt * (rate_diff / 100)) / 12
+            else:
+                monthly_savings = 0
+            
+            # For total savings, assume new loan tenure
+            total_savings = monthly_savings * n
+        else:
+            # Standard Cash Flow Comparison
+            monthly_savings = current_total_emi - new_emi
+            total_savings = monthly_savings * n
 
-        should_consolidate = total_savings > 0 and rate_diff > 1.0 # 1% threshold
+        should_consolidate = monthly_savings > 0 and rate_diff > 0.5 
         
         rec = "Consolidation is not recommended."
         if should_consolidate:
-            rec = f"Consolidating your debts could save you ₹{int(monthly_savings)}/month! Your current weighted interest is {weighted_rate:.1f}%, while the new loan is {input_data.new_loan_interest_rate:.1f}%."
+            rec = f"Consolidating your debts could save you ₹{int(monthly_savings)}/month in interest! Your current weighted interest is {weighted_rate:.1f}%, while the new loan is {input_data.new_loan_interest_rate:.1f}%."
 
         return DebtConsolidationOutput(
             should_consolidate=should_consolidate,

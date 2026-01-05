@@ -15,5 +15,13 @@ POLICY_KNOWLEDGE_BASE = {
     "GENERIC": {
          "en": "General Advice: Always check the Annual Percentage Rate (APR) rather than just the interest rate. Ensure there are no hidden clauses regarding foreclosure charges or insurance requirements. Read the fine print before signing.",
          "ml": "പൊതുവായ ഉപദേശം: പലിശ നിരക്ക് മാത്രമല്ല, APR (വാർഷിക ശതമാനം നിരക്ക്) പരിശോധക്കുക. മുൻകൂട്ടി അടയ്ക്കുന്നതിനുള്ള ചാർജുകളെക്കുറിച്ചോ ഇൻഷുറൻസ് ആവശ്യകതകളെക്കുറിച്ചോ മറഞ്ഞിരിക്കുന്ന വ്യവസ്ഥകൾ ഇല്ലെന്ന് ഉറപ്പാക്കുക. ഒപ്പിടുന്നതിന് മുമ്പ് നിബന്ധനകൾ ശ്രദ്ധാപൂർവ്വം വായിക്കുക."
+    },
+    "GENERIC_PERSONAL": {
+        "en": "For Personal Loans: Interest rates typically range from 10% to 24%. Watch out for processing fees (up to 3%) and foreclosure charges. If you pre-pay, you might be charged a penalty. Ensure there are no hidden insurance premiums bundled with the loan.",
+        "ml": "വ്യക്തിഗത വായ്പകൾക്ക്: പലിശ നിരക്ക് 10% മുതൽ 24% വരെയാകാം. 3% വരെയുള്ള പ്രോസസ്സിംഗ് ഫീസും ഫോർക്ലോഷർ ചാർജുകളും ശ്രദ്ധിക്കുക. വായ്പ മുൻകൂട്ടി അടച്ചാൽ പിഴ ഈടാക്കാം. വായ്പയോടൊപ്പം അനാവശ്യ ഇൻഷുറൻസ് ഇല്ലെന്ന് ഉറപ്പാക്കുക."
+    },
+    "GENERIC_HOME": {
+        "en": "For Home Loans: Most rates are floating and linked to the Repo Rate. Ensure you understand the 'spread' over the repo rate. Pre-payment is usually penalty-free for floating rates. Property insurance is mandatory. Legal verification of the property title is critical.",
+        "ml": "ഭവന വായ്പകൾക്ക്: മിക്ക നിരക്കുകളും റിപ്പോ നിരക്കുമായി ബന്ധിപ്പിച്ചിരിക്കുന്നു. ഫ്ലോട്ടിംഗ് നിരക്കുകൾക്ക് മുൻകൂട്ടി അടയ്ക്കുന്നതിന് പിഴയില്ല. പ്രോപ്പർട്ടി ഇൻഷുറൻസ് നിർബന്ധമാണ്. വസ്തുവിന്റെ ഉടമസ്ഥാവകാശം നിയമപരമായി പരിശോധിക്കുന്നത് വളരെ പ്രധാനമാണ്."
     }
 }
