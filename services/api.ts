@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-// Use env var or default. If env var doesn't start with http, assume https (for Render).
-const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-export const API_BASE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-=======
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://credguardai.onrender.com";
->>>>>>> 9f29665 (updated backend url)
 
 export const api = {
     post: async <T>(endpoint: string, body: any): Promise<T> => {
