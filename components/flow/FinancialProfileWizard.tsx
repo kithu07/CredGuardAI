@@ -21,6 +21,23 @@ export const FinancialProfileWizard = () => {
     const { profile, updateProfile, setStep } = useAppFlow();
     const { t } = useLanguage();
     const [wizardStep, setWizardStep] = useState(1);
+    const [goldRate, setGoldRate] = useState<number>(0);
+
+    React.useEffect(() => {
+        const fetchGoldRate = async () => {
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://credguardai.onrender.com";
+                const res = await fetch(`${API_URL}/api/gold-rate`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setGoldRate(data.rate);
+                }
+            } catch (e) {
+                console.error("Failed to fetch gold rate", e);
+            }
+        };
+        fetchGoldRate();
+    }, []);
 
     // Asset Management State
     const [assetsList, setAssetsList] = useState<Asset[]>([]);
