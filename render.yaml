@@ -1,0 +1,25 @@
+services:
+  # 1. Backend Service (Python/FastAPI)
+  - type: web
+    name: credguard-backend
+    env: python
+    region: singapore # Optional: closer to India
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # User must enter this manually in dashboard
+
+  # 2. Frontend Service (Next.js)
+  - type: web
+    name: credguard-frontend
+    env: node
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: credguard-backend
+          property: url
