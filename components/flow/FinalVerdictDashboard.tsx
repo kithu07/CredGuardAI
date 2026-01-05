@@ -109,13 +109,22 @@ export const FinalVerdictDashboard = () => {
     };
 
     // Dynamic Charts Data
-    const monthlyEMI = loanRequest.amount * (loanRequest.interestRate / 1200); // Simple approx
+    const calculatePMT = (principal: number, rate: number, months: number) => {
+        if (months <= 0) return 0;
+        const r = rate / 1200; // Monthly rate
+        if (r === 0) return principal / months;
+        // P * r * (1 + r)^n / ((1 + r)^n - 1)
+        return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+    };
+
+    const monthlyEMI = calculatePMT(loanRequest.amount, loanRequest.interestRate, loanRequest.tenureMonths);
 
     // Correct logic: Income - Expenses - ExistingEMIs - NewEMI = Remaining
-    const remaining = Math.max(0, profile.monthlyIncome - (profile.monthlyExpenses + profile.existingEMIs + monthlyEMI));
+    // Allow negative remaining to show deficit
+    const remaining = profile.monthlyIncome - (profile.monthlyExpenses + profile.existingEMIs + monthlyEMI);
 
     const emiIncomeData = {
-        labels: ['Income', 'Expenses', 'New EMI', 'Remaining'],
+        labels: ['Income', 'Expenses', 'New EMI', 'Net Cash Flow'],
         datasets: [{
             label: t('monthly_allocation'),
             data: [
@@ -124,7 +133,12 @@ export const FinalVerdictDashboard = () => {
                 monthlyEMI,
                 remaining
             ],
-            backgroundColor: ['#3b82f6', '#94a3b8', riskLevel === 'DANGEROUS' ? '#f43f5e' : '#f59e0b', '#10b981'],
+            backgroundColor: [
+                '#3b82f6', // Blue (Income)
+                '#94a3b8', // Gray (Expenses)
+                riskLevel === 'DANGEROUS' ? '#f43f5e' : '#f59e0b', // Red/Amber (EMI)
+                remaining >= 0 ? '#10b981' : '#ef4444' // Green (Surplus) or Red (Deficit)
+            ],
             borderRadius: 8,
         }]
     };
@@ -140,8 +154,8 @@ export const FinalVerdictDashboard = () => {
                 profile.savings + (remaining * 12),
                 profile.savings + (remaining * 24)
             ],
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderColor: remaining >= 0 ? '#3b82f6' : '#ef4444', // Blue or Red line
+            backgroundColor: remaining >= 0 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)', // Blue or Red fill
             fill: true,
             tension: 0.4,
         }]
@@ -358,7 +372,7 @@ export const FinalVerdictDashboard = () => {
                 </Button>
                 <Button className="w-full sm:w-auto" onClick={async () => {
                     try {
-                        const blob = await downloadReport(profile, verdict!, creditInsight!, language);
+                        const blob = await downloadReport(profile, loanRequest, verdict!, creditInsight!, language);
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
