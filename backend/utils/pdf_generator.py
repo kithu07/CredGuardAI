@@ -70,6 +70,97 @@ class PDFReport(FPDF):
             self.multi_cell(0, 6, self.sanitize(text[:100] + "... (truncated)"))
         self.ln()
 
+        return self.output()
+
+    def calculate_technical_metrics(self):
+        # Extract data with safe defaults
+        amount = float(self.profile.get('loan_amount', 0))
+        rate = float(self.profile.get('interest_rate', 0))
+        tenure = int(self.profile.get('tenure_months', 0))
+        income = float(self.profile.get('monthly_income', 0))
+        existing_emis = float(self.profile.get('existing_emis', 0))
+
+        # 1. EMI Calculation (PMT)
+        emi = 0.0
+        if tenure > 0 and rate > 0:
+            r = rate / 1200
+            emi = (amount * r * ((1 + r) ** tenure)) / (((1 + r) ** tenure) - 1)
+        elif tenure > 0:
+            emi = amount / tenure
+
+        # 2. Total Cost
+        total_payable = emi * tenure
+        total_interest = total_payable - amount
+        interest_ratio = (total_interest / total_payable * 100) if total_payable > 0 else 0
+
+        # 3. Ratios
+        new_total_emi = existing_emis + emi
+        dti_ratio = (new_total_emi / income * 100) if income > 0 else 0
+        
+        return {
+            "emi": emi,
+            "total_payable": total_payable,
+            "total_interest": total_interest,
+            "interest_ratio": interest_ratio,
+            "dti_ratio": dti_ratio,
+            "amount": amount,
+            "rate": rate,
+            "tenure": tenure
+        }
+
+    def chapter_technical_analysis(self):
+        self.chapter_title("Technical Analysis")
+        metrics = self.calculate_technical_metrics()
+        
+        self.set_font('Helvetica', '', 10)
+        self.set_fill_color(240, 249, 255) # Light Blue
+        
+        # Loan Structure Table
+        structure_data = [
+            ("Loan Amount", f"Rs. {metrics['amount']:,.2f}"),
+            ("Interest Rate", f"{metrics['rate']}% p.a."),
+            ("Tenure", f"{metrics['tenure']} Months"),
+            ("Monthly EMI", f"Rs. {metrics['emi']:,.2f}")
+        ]
+
+        self.set_font('Helvetica', 'B', 11)
+        self.cell(0, 8, "Loan Structure", new_x="LMARGIN", new_y="NEXT")
+        self.ln(2)
+        
+        self.set_font('Helvetica', '', 10)
+        for key, val in structure_data:
+            self.cell(80, 8, key, border=1, fill=True)
+            self.cell(0, 8, val, border=1, new_x="LMARGIN", new_y="NEXT")
+            
+        self.ln(5)
+
+        # Financial Health Ratios
+        self.set_font('Helvetica', 'B', 11)
+        self.cell(0, 8, "Health Impact & Ratios", new_x="LMARGIN", new_y="NEXT")
+        self.ln(2)
+
+        ratio_data = [
+            ("Debt-to-Income (DTI) Ratio", f"{metrics['dti_ratio']:.1f}%"),
+            ("Interest Cost Ratio", f"{metrics['interest_ratio']:.1f}% of total payment"),
+            ("Total Interest Payable", f"Rs. {metrics['total_interest']:,.2f}"),
+            ("Total Payment (Principal + Interest)", f"Rs. {metrics['total_payable']:,.2f}")
+        ]
+
+        # Conditional Formatting for DTI
+        dti = metrics['dti_ratio']
+        dti_status = "(Safe)" if dti < 40 else "(Careful)" if dti < 50 else "(Dangerous)"
+        
+        for key, val in ratio_data:
+            self.cell(80, 8, key, border=1, fill=True)
+            if "DTI" in key:
+                val += f" {dti_status}"
+            self.cell(0, 8, val, border=1, new_x="LMARGIN", new_y="NEXT")
+            
+        self.ln(5)
+        self.set_font('Helvetica', 'I', 9)
+        self.multi_cell(0, 5, "Note: A DTI above 40% typically reduces your eligibility for future loans. High interest ratios indicate you are paying significantly more than the borrowed amount.")
+
+
     def generate(self):
         self.add_page()
         
@@ -95,7 +186,7 @@ class PDFReport(FPDF):
         self.chapter_title("Executive Summary")
         self.chapter_body(self.verdict.get('explanation', ''))
         
-        # 3. Key Metrics Table
+        # 3. Key Metrics Table (Financial Snapshot) - REDUCED to avoid duplication
         self.chapter_title("Financial Snapshot")
         self.set_font('Helvetica', '', 10)
         self.set_fill_color(248, 250, 252)
@@ -103,7 +194,7 @@ class PDFReport(FPDF):
         metrics = [
             ("Monthly Income", f"{self.profile.get('monthly_income', 0):,.2f}"),
             ("Monthly Expenses", f"{self.profile.get('monthly_expenses', 0):,.2f}"),
-            ("Credit Score Band", self.verdict.get('credit_score_band', 'N/A')), # Might need adjusting depending on input structure
+            ("Credit Score Band", self.verdict.get('credit_score_band', 'N/A')),
             ("Risk Score", f"{self.verdict.get('score', 0)}/100")
         ]
         
@@ -111,35 +202,28 @@ class PDFReport(FPDF):
             self.set_font('Helvetica', 'B', 10)
             self.cell(60, 8, self.sanitize(key), border=1, fill=True)
             self.set_font('Helvetica', '', 10)
-            # Use multi_cell for value to prevent width overflow
-            # Save x, y to return for border drawing if needed, but simpler to just use cell with truncation or robust multi_cell logic
-            # Actually, standard cell clips text. Let's use multi_cell for safety or just clip.
-            # Error happened at 'render a single char', likely in a multi_cell.
-            # Table is using 'cell', which usually clips. 
-            # But let's check suggestions (tips).
             self.cell(0, 8, self.sanitize(str(value)), border=1, new_x="LMARGIN", new_y="NEXT")
             
         self.ln(10)
+
+        # 4. Technical Analysis (NEW)
+        self.chapter_technical_analysis()
+        self.ln(5)
         
-        # 4. AI Recommendations
+        # 5. AI Recommendations
         self.chapter_title("Financial Mentor Recommendations")
         tips = self.verdict.get('financial_tips', [])
         for tip in tips:
             self.set_text_color(0, 0, 0)
-            # Combine bullet and text
             full_text = f"- {self.sanitize(tip)}"
-            # Safety check: if text is too long without spaces, force break? 
-            # Or just ensure we are at left margin.
-            if self.get_x() > 20:
-                self.ln()
-            
+            if self.get_x() > 20: self.ln()
             try:
                 self.multi_cell(0, 6, full_text)
             except Exception:
                  self.multi_cell(0, 6, full_text[:100] + "...")
         self.ln()
             
-        # 5. Disclaimer
+        # 6. Disclaimer
         self.ln(10)
         self.set_font('Helvetica', 'I', 9)
         self.set_text_color(100)

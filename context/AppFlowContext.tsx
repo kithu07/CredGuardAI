@@ -22,7 +22,7 @@ const defaultProfile: FinancialProfile = {
     monthlyExpenses: 0,
     existingEMIs: 0,
     savings: 0,
-    assets: [],
+    assets: 0,
     dependents: 0,
     spendingBehavior: 50,
 };

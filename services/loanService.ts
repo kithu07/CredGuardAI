@@ -90,7 +90,7 @@ export const calculateVerdict = async (
         expenses: profile.monthlyExpenses,
         savings: profile.savings,
         emergency_fund: profile.savings, // Assuming savings includes emergency fund
-        assets: profile.assets.reduce((sum, a) => sum + a.value, 0),
+        assets: profile.assets,
         existing_emis: profile.existingEMIs,
         dependents: profile.dependents,
         language
@@ -234,6 +234,7 @@ export const getLoanComparisons = async (loan: LoanRequest): Promise<LenderCompa
 
 export const downloadReport = async (
     profile: FinancialProfile,
+    loan: LoanRequest,
     verdict: FinalVerdict,
     creditInsight: CreditInsight,
     language: string = 'en'
@@ -259,7 +260,11 @@ export const downloadReport = async (
             savings: profile.savings,
             existing_emis: profile.existingEMIs,
             dependents: profile.dependents,
-            assets: [], // Add required field for Pydantic model if needed, otherwise empty list
+            assets: profile.assets, // Updated to pass the numeric value
+            // EXTENDED: Pass Loan Details for Technical Analysis
+            loan_amount: loan.amount,
+            interest_rate: loan.interestRate,
+            tenure_months: loan.tenureMonths,
             language: language // Ensure language is passed in profile if expected
         },
         decision_synthesis: {

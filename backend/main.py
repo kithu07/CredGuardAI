@@ -147,5 +147,11 @@ def get_policy(bank_code: str, lang: str = "en", name: str = "Valued Customer", 
         preamble = f"നമസ്കാരം {name}, നിങ്ങളുടെ {loan_type}-നെ സംബന്ധിച്ച ചില പ്രധാന വ്യവസ്ഥകൾ ഇവയാണ്: "
     
     return {"text": preamble + raw_text}
+
+from backend.utils.asset_prices import AssetPriceService
+
+@app.get("/assets/prices")
+def get_asset_prices():
+    return AssetPriceService.get_live_rates()
 def health_check():
     return {"status": "CredGuard AI Backend Running"}

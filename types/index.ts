@@ -3,7 +3,7 @@ export interface FinancialProfile {
     monthlyExpenses: number;
     existingEMIs: number;
     savings: number;
-    assets: Asset[];
+    assets: number;
     dependents: number;
     spendingBehavior: number; // 0-100 slider
     name?: string; // Added for Personalization

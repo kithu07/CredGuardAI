@@ -1,19 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppFlow } from '@/context/AppFlowContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ArrowRight, ArrowLeft, Wallet, PiggyBank, Users } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Wallet, PiggyBank, Users, Plus, Trash2, RefreshCcw } from 'lucide-react';
 import { ASSET_TYPES } from '@/constants';
+import { useLanguage } from '@/context/LanguageContext';
 
 const TOTAL_WIZARD_STEPS = 3;
 
-import { useLanguage } from '@/context/LanguageContext';
+interface Asset {
+    id: string;
+    type: string;
+    value: number;
+    quantity?: number; // for Gold/Silver in grams
+    unit?: string;
+}
 
 export const FinancialProfileWizard = () => {
     const { profile, updateProfile, setStep } = useAppFlow();
     const { t } = useLanguage();
     const [wizardStep, setWizardStep] = useState(1);
+    const [goldRate, setGoldRate] = useState<number>(0);
+
+    React.useEffect(() => {
+        const fetchGoldRate = async () => {
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://credguardai.onrender.com";
+                const res = await fetch(`${API_URL}/api/gold-rate`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setGoldRate(data.rate);
+                }
+            } catch (e) {
+                console.error("Failed to fetch gold rate", e);
+            }
+        };
+        fetchGoldRate();
+    }, []);
+
+    // Asset Management State
+    const [assetsList, setAssetsList] = useState<Asset[]>([]);
+    const [liveRates, setLiveRates] = useState<any>(null);
+    const [loadingRates, setLoadingRates] = useState(false);
+
+    // New Asset Form State
+    const [newAssetType, setNewAssetType] = useState(ASSET_TYPES[0]);
+    const [newAssetValue, setNewAssetValue] = useState(''); // Value or Quantity
+
+    // Fetch live rates on mount
+    useEffect(() => {
+        const fetchRates = async () => {
+            setLoadingRates(true);
+            try {
+                // In a real app, use environment variable for API URL
+                const response = await fetch('http://localhost:8000/assets/prices');
+                if (response.ok) {
+                    const data = await response.json();
+                    setLiveRates(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch rates", error);
+            } finally {
+                setLoadingRates(false);
+            }
+        };
+        fetchRates();
+    }, []);
+
+    // Update global profile assets whenever local list changes
+    useEffect(() => {
+        const totalParams = assetsList.reduce((acc, curr) => acc + curr.value, 0);
+        updateProfile({ assets: totalParams });
+    }, [assetsList]);
+
+    const handleAddAsset = () => {
+        if (!newAssetValue) return;
+
+        const numValue = parseFloat(newAssetValue);
+        if (isNaN(numValue) || numValue <= 0) return;
+
+        let finalValue = numValue;
+        let quantity: number | undefined = undefined;
+        let unit: string | undefined = undefined;
+
+        // Calculate value for specialized assets
+        if (newAssetType === 'Gold' && liveRates?.Gold) {
+            quantity = numValue;
+            unit = 'gram';
+            finalValue = numValue * liveRates.Gold.rate;
+        } else if (newAssetType === 'Silver' && liveRates?.Silver) {
+            quantity = numValue;
+            unit = 'gram';
+            finalValue = numValue * liveRates.Silver.rate;
+        }
+
+        const newAsset: Asset = {
+            id: Math.random().toString(36).substr(2, 9),
+            type: newAssetType,
+            value: finalValue,
+            quantity,
+            unit
+        };
+
+        setAssetsList([...assetsList, newAsset]);
+        setNewAssetValue(''); // Reset input
+    };
+
+    const handleRemoveAsset = (id: string) => {
+        setAssetsList(assetsList.filter(a => a.id !== id));
+    };
 
     const handleNext = () => {
         if (wizardStep < TOTAL_WIZARD_STEPS) {
@@ -35,7 +131,14 @@ export const FinancialProfileWizard = () => {
         if (wizardStep === 1) {
             return profile.monthlyIncome > 0 && profile.monthlyExpenses >= 0;
         }
-        return true; // Simplified validation
+        return true;
+    };
+
+    const getAssetInputLabel = () => {
+        if (newAssetType === 'Gold' || newAssetType === 'Silver') {
+            return `Quantity (Grams)`;
+        }
+        return `Estimated Value (₹)`;
     };
 
     return (
@@ -99,10 +202,14 @@ export const FinancialProfileWizard = () => {
 
                 {wizardStep === 2 && (
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-3 text-emerald-600 mb-2">
-                            <PiggyBank className="w-6 h-6" />
-                            <h3 className="text-lg font-semibold">{t('savings_title')}</h3>
+                        <div className="flex items-center justify-between text-emerald-600 mb-2">
+                            <div className="flex items-center space-x-3">
+                                <PiggyBank className="w-6 h-6" />
+                                <h3 className="text-lg font-semibold">{t('savings_title')}</h3>
+                            </div>
+                            {loadingRates && <span className="text-xs flex items-center bg-gray-100 px-2 py-1 rounded-lg text-gray-500"><RefreshCcw className="w-3 h-3 mr-1 animate-spin" /> Updating Rates...</span>}
                         </div>
+
                         <Input
                             label={t('savings_label')}
                             type="number"
@@ -113,20 +220,81 @@ export const FinancialProfileWizard = () => {
                             icon={<span className="text-gray-500">₹</span>}
                         />
 
-                        <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-gray-700">{t('assets_label')}</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {ASSET_TYPES.map((asset) => (
-                                    <label key={asset} className="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                                            // Mock implementation for assets array
-                                            onChange={() => { }}
-                                        />
-                                        <span className="text-sm font-medium text-slate-700">{asset}</span>
-                                    </label>
-                                ))}
+                        <div className="pt-4 border-t border-slate-100">
+                            <label className="block text-sm font-semibold text-gray-700 mb-4">{t('assets_label')}</label>
+
+                            {/* Asset Entry Form */}
+                            <div className="flex flex-col sm:flex-row gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div className="flex-1">
+                                    <label className="text-xs text-gray-500 font-medium mb-1 block">Asset Type</label>
+                                    <select
+                                        className="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        value={newAssetType}
+                                        onChange={(e) => setNewAssetType(e.target.value)}
+                                    >
+                                        {ASSET_TYPES.map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                    {(newAssetType === 'Gold' || newAssetType === 'Silver') && liveRates && (
+                                        <p className="text-xs text-emerald-600 mt-1 font-medium">
+                                            Current Rate: ₹{liveRates[newAssetType]?.rate}/{liveRates[newAssetType]?.unit}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-xs text-gray-500 font-medium mb-1 block">{getAssetInputLabel()}</label>
+                                    <input
+                                        type="number"
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        placeholder="0"
+                                        value={newAssetValue}
+                                        onChange={(e) => setNewAssetValue(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <Button
+                                        onClick={handleAddAsset}
+                                        disabled={!newAssetValue}
+                                        className="w-full sm:w-auto h-[42px]"
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" /> Add
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Added Assets List */}
+                            <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                                {assetsList.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
+                                        No assets added yet
+                                    </div>
+                                ) : (
+                                    assetsList.map((asset) => (
+                                        <div key={asset.id} className="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                            <div>
+                                                <p className="font-semibold text-slate-700">{asset.type}</p>
+                                                <p className="text-xs text-slate-500">
+                                                    {asset.quantity ? `${asset.quantity} ${asset.unit} @ Market Rate` : 'Manual Valuation'}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <span className="font-bold text-emerald-600">₹{asset.value.toLocaleString()}</span>
+                                                <button
+                                                    onClick={() => handleRemoveAsset(asset.id)}
+                                                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex justify-between items-center text-sm font-semibold bg-blue-50 text-blue-800 p-3 rounded-lg">
+                                <span>Total Assets Value</span>
+                                <span>₹{assetsList.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
